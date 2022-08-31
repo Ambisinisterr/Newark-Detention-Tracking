@@ -33,7 +33,7 @@ Keeping track of how much detention is being accrued allows us to guage how quic
 
 ## Final Product
 
-[INSERT IMAGE HERE]
+<img src="https://github.com/Ambisinisterr/Newark-Detention-Tracking/blob/main/Assets/FinishedDashboard.png?raw=true">
 
 ----
 
@@ -131,7 +131,7 @@ In short this says for every cell in the column, if there is no date in the row,
 
 ### Final Output of the Month
 
-[INSERT IMAGE HERE]
+<img src="https://github.com/Ambisinisterr/Newark-Detention-Tracking/blob/main/Assets/JanuaryDetention.png?raw=true">
 
 ### Aggregating on Main Page
 ----
