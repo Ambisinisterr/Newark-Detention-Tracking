@@ -1,7 +1,9 @@
 # Newark-Detention-Tracking
-
-##Goal
 ----
+
+## Goal
+----
+
 Create a Dashboard which can quickly collect and aggregate information from various existing google spreadsheets. Allow for settings to be assigned by users as certain variables will change over time based on market situations.
 
 Collect the Following Data:
@@ -22,8 +24,8 @@ Finishing Touches
 2) Allow cost per hour to be user defined
 3) Highlight cells for easier reading
 
-----
 ## Background
+----
 
 The terminal I work for at NFI mainly serviced the Anhueser Busch Newark Brewery and NFI runs the inbound loads as a feeder operation. In short this means NFI can only operate as long as the Newark Operation is up and running. If Newark's production is down and there is no empty equipment to take out of Newark then the NFI Drivers will be detained at Newark until Newark is able to resume operations or until they run out of DOT Service Hours.
 
@@ -31,12 +33,20 @@ Keeping track of how much detention is being accrued allows us to guage how quic
 
 ----
 
-##Final Product
+## Final Product
 ----
 
 [INSERT IMAGE HERE]
 
-##Logic
+# Conclusion
+----
+
+After some recent incidents of the Newark Brewery having downtime my manager requested that I create a tracking sheet. He likely expected it to be a sheet where we manually entered a period of time when we noticed it but this type of sheet would increase workload and be prone to gaps in data when users forgot to notate any detention.
+
+However the ifnormation to create a fully automatic dashboard is all readily available and filled out on a daily basis for standard procedures. I took this request as an opportunity to put a bit of extra time up front to save hours of time going as well as an opportunity to do some practical SQL practice. This sheet will only require minor amendments from future users in order to use this dashboard in the years to come and will be far more accurate and less work than any manually collected data.
+
+----
+## Logic
 ----
 
 ### Importing Every Month
@@ -79,23 +89,23 @@ IFERROR(QUERY(IMPORTRANGE(C3,TEXT(B36,"M/D")&"!A1:M"),"SELECT '"&TEXT(B36,"MM/DD
 },"SELECT * WHERE Col1 IS NOT NULL",0),"No Results")
 ```
 
-Breakdown
+#### Breakdown
 
 The above is not pretty so let's walk though the logic.
 
-Wrapper Query
+#### Wrapper Query
 ```
 IFERROR(QUERY(...,"SELECT * WHERE Col2 IS NOT NULL",0),"No Results")
 ```
 This is a query which will combine every day of the month. If there is no results for that month return "No Results." Otherwise it will return all results where there is a Driver ID in the sheet.
 
-Array of Dates
+#### Array of Dates
 ```
 {IFERROR(QUERY( ... ),{"","","","","",""})}
 ```
 Everything between the two brackets is an array of 31 queries which is one for each date. If the date does not exist or there is no information in the date it will return 6 empty cells to ensure compatibility with the remaining queries.
 
-SQL Query and Import Range
+#### SQL Query and Import Range
 ```
 QUERY(IMPORTRANGE(C3,TEXT(B6,"M/D")&"!A1:M"),"SELECT '"&TEXT(B6,"MM/DD")&"',Col1,Col7,Col9,Col11,Col12 WHERE Col11 IS NOT NULL AND (Col9 LIKE '%85' OR Col9 LIKE '%65')",0)
 ```
@@ -106,19 +116,66 @@ a) Create Date Column which is B6
 b) Get Driver ID, Order Numer, Product/Line Number, Arrival Time, Departure Time from specified sheet
 
 Final Results look like this:
-|------|-----------|-------------|---------------------|--------------|----------------|
 | Date | Driver ID | Order Numer | Product/Line Number | Arrival Time | Departure Time |
+|------|-----------|-------------|---------------------|--------------|----------------|
 |08/01 | PORAN 2   | 836527      | BHL 85              | 22:53        | 23:03          |
 
-Difference in time
+#### Difference in time
 ```
 =ARRAYFORMULA(IF(D6:D="","",IF((I6:I-H6:H)-TIME(0,Detention!N19,0)<0,0,(I6:I-H6:H)-TIME(0,Detention!N19,0))))
 ```
 A difference row was added to subtract the Arrival Time from the Departure Time along with a forfeited time set by the user in the Detention sheet.
 In short this says for every cell in the column, if there is no date in the row, leave blank. If the Departure minus Arrival minus Forfeited Time is less than 0, return 0. Otherwise return the difference.
 
-Final Output of the Month
+###Final Output of the Month
 
 [INSERT IMAGE HERE]
 
+### Aggregating on Main Page
+
+#### Daily Detention
+```
+=QUERY({QUERY(January!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(February!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(March!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(April!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(May!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(June!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(July!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1);
+QUERY(August!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D label D 'Date', SUM(J) 'Total Detention'",1)},"SELECT * WHERE Col2 IS NOT NULL")
+```
+This is a nested query which will return the total detention for every day of the year.
+
+#### Weekly Detention
+Weekly detention is calculated by determining the week date and the sum of all detention between those dates. Formulas uses the daily detention to save of processing requirements.
+
+#### Detention by Line
+```
+=SUM({IFERROR(QUERY(January!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(February!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(March!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(April!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(May!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(June!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(July!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(August!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(September!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(October!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0);
+IFERROR(QUERY(November!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0,0));
+IFERROR(QUERY(December!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)''",0),0)})
+```
+The above is the formula to aggregate the total Line 65 loads.
+
+## Error Handling
+----
+
+There is a lot of error handling which needed to be addressed. The main one was mentioned earlier where any queries to the import cell was set to return blank cells instead of an error.
+
+Some additional error handling includes
+
+### Negative Time
+In order to forfeit a period of time to account for gate times, dropping trailers, hooking trailers and driver breaks a user defined period of time is removed from every stop. In doing so most loads had a negative period of time which had to be corrected to be zero time detained.
+
+### Null Results in Main Page
+Any time months were being aggregated on the main dashboard there is a possibility of a null result. Every null result was replaced with a sum of 0 time or 0 occurances.
 
