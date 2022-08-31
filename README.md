@@ -1,8 +1,6 @@
 # Newark-Detention-Tracking
-----
 
 ## Goal
-----
 
 Create a Dashboard which can quickly collect and aggregate information from various existing google spreadsheets. Allow for settings to be assigned by users as certain variables will change over time based on market situations.
 
@@ -26,7 +24,6 @@ Create a Dashboard which can quickly collect and aggregate information from vari
 4) Highlight cells for easier reading
 
 ## Background
-----
 
 The terminal I work for at NFI mainly serviced the Anhueser Busch Newark Brewery and NFI runs the inbound loads as a feeder operation. In short this means NFI can only operate as long as the Newark Operation is up and running. If Newark's production is down and there is no empty equipment to take out of Newark then the NFI Drivers will be detained at Newark until Newark is able to resume operations or until they run out of DOT Service Hours.
 
@@ -35,19 +32,20 @@ Keeping track of how much detention is being accrued allows us to guage how quic
 ----
 
 ## Final Product
-----
 
 [INSERT IMAGE HERE]
 
-# Conclusion
 ----
+
+## Conclusion
 
 After some recent incidents of the Newark Brewery having downtime my manager requested that I create a tracking sheet. He likely expected it to be a sheet where we manually entered a period of time when we noticed it but this type of sheet would increase workload and be prone to gaps in data when users forgot to notate any detention.
 
 However the ifnormation to create a fully automatic dashboard is all readily available and filled out on a daily basis for standard procedures. I took this request as an opportunity to put a bit of extra time up front to save hours of time going as well as an opportunity to do some practical SQL practice. This sheet will only require minor amendments from future users in order to use this dashboard in the years to come and will be far more accurate and less work than any manually collected data.
 
-## Logic
 ----
+
+## Logic
 
 ### Importing Every Month
 In order to import every month I used a combination of excel formulas and SQL.
@@ -172,7 +170,6 @@ IFERROR(QUERY(December!G6:G,"SELECT COUNT(G) WHERE G LIKE '%65%' LABEL COUNT(G)'
 The above is the formula to aggregate the total Line 65 loads.
 
 ## Error Handling
-----
 
 There is a lot of error handling which needed to be addressed in order to ensure code doesn't fail in future years
 
