@@ -6,12 +6,12 @@
 
 Create a Dashboard which can quickly collect and aggregate information from various existing google spreadsheets. Allow for settings to be assigned by users as certain variables will change over time based on market situations.
 
-Collect the Following Data:
+**Collect the Following Data:**
 1) Brewery Schedules from January to December (Each is a unique Spreadsheet)
 2) Collect each day from the monthly schedules (Each is it's own page)
 3) Filter to only collect Line 65 and Line 85 Loads
 
-Display the following:
+**Display the following:**
 1) Total detention for each day
 2) Total detention for each week
 3) Total detention for each month
@@ -19,10 +19,11 @@ Display the following:
 4) Breakdown of detention for Line 65 and Line 85 Loads
 5) Display costs for all of the above metrics
 
-Finishing Touches
+**Finishing Touches:**
 1) Allow detention forfeited to be user defined
 2) Allow cost per hour to be user defined
-3) Highlight cells for easier reading
+3) Allow for easy alteration for additional years
+4) Highlight cells for easier reading
 
 ## Background
 ----
@@ -45,7 +46,6 @@ After some recent incidents of the Newark Brewery having downtime my manager req
 
 However the ifnormation to create a fully automatic dashboard is all readily available and filled out on a daily basis for standard procedures. I took this request as an opportunity to put a bit of extra time up front to save hours of time going as well as an opportunity to do some practical SQL practice. This sheet will only require minor amendments from future users in order to use this dashboard in the years to come and will be far more accurate and less work than any manually collected data.
 
-----
 ## Logic
 ----
 
@@ -107,13 +107,15 @@ Everything between the two brackets is an array of 31 queries which is one for e
 
 #### SQL Query and Import Range
 ```
-QUERY(IMPORTRANGE(C3,TEXT(B6,"M/D")&"!A1:M"),"SELECT '"&TEXT(B6,"MM/DD")&"',Col1,Col7,Col9,Col11,Col12 WHERE Col11 IS NOT NULL AND (Col9 LIKE '%85' OR Col9 LIKE '%65')",0)
+QUERY(IMPORTRANGE(C3,TEXT(B6,"M/D")&"!A1:M"),
+"SELECT '"&TEXT(B6,"MM/DD")&"',Col1,Col7,Col9,Col11,Col12 WHERE Col11 IS NOT NULL AND (Col9 LIKE '%85' OR Col9 LIKE '%65')",
+0)
 ```
 1) Import a range from a URL in C3.
 2) Sheet is the text from B6 (a date) formated to be M/D. Cells A1:M
 3) Query: 
-a) Create Date Column which is B6
-b) Get Driver ID, Order Numer, Product/Line Number, Arrival Time, Departure Time from specified sheet
+  a) Create Date Column which is B6
+  b) Get Driver ID, Order Numer, Product/Line Number, Arrival Time, Departure Time from specified sheet
 
 Final Results look like this:
 | Date | Driver ID | Order Numer | Product/Line Number | Arrival Time | Departure Time |
@@ -122,16 +124,19 @@ Final Results look like this:
 
 #### Difference in time
 ```
-=ARRAYFORMULA(IF(D6:D="","",IF((I6:I-H6:H)-TIME(0,Detention!N19,0)<0,0,(I6:I-H6:H)-TIME(0,Detention!N19,0))))
+=ARRAYFORMULA(
+  IF(D6:D="","",IF((I6:I-H6:H)-TIME(0,Detention!N19,0)<0,0,(I6:I-H6:H)-TIME(0,Detention!N19,0)))
+)
 ```
 A difference row was added to subtract the Arrival Time from the Departure Time along with a forfeited time set by the user in the Detention sheet.
 In short this says for every cell in the column, if there is no date in the row, leave blank. If the Departure minus Arrival minus Forfeited Time is less than 0, return 0. Otherwise return the difference.
 
-###Final Output of the Month
+### Final Output of the Month
 
 [INSERT IMAGE HERE]
 
 ### Aggregating on Main Page
+----
 
 #### Daily Detention
 ```
@@ -147,7 +152,7 @@ QUERY(August!D6:J,"SELECT D, SUM(J) WHERE J IS NOT NULL GROUP BY D ORDER BY D la
 This is a nested query which will return the total detention for every day of the year.
 
 #### Weekly Detention
-Weekly detention is calculated by determining the week date and the sum of all detention between those dates. Formulas uses the daily detention to save of processing requirements.
+Weekly detention is calculated by determining the week date and the sum of all detention between those dates. Formulas uses the daily detention to save of processing requirements. The one thing to note is that this section is defined by the year and will adjust based on the year set in the sheet.
 
 #### Detention by Line
 ```
@@ -169,13 +174,20 @@ The above is the formula to aggregate the total Line 65 loads.
 ## Error Handling
 ----
 
-There is a lot of error handling which needed to be addressed. The main one was mentioned earlier where any queries to the import cell was set to return blank cells instead of an error.
+There is a lot of error handling which needed to be addressed in order to ensure code doesn't fail in future years
 
-Some additional error handling includes
+### Empty Query Results
+```
+{IFERROR(QUERY( ... ),{"","","","","",""})}
+```
+As the goal of this project is to collect data for an entire year with no code being altered almost all of the SQL needed to have error handling to ensure any null results or failed queries returned blank results in the correct shape to be merged with other queries.
 
 ### Negative Time
 In order to forfeit a period of time to account for gate times, dropping trailers, hooking trailers and driver breaks a user defined period of time is removed from every stop. In doing so most loads had a negative period of time which had to be corrected to be zero time detained.
 
 ### Null Results in Main Page
 Any time months were being aggregated on the main dashboard there is a possibility of a null result. Every null result was replaced with a sum of 0 time or 0 occurances.
+
+### Leap Years
+February 29 will appear if the date is set to be a leap year. This is a long way off but it is a little less technical debt.
 
